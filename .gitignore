@@ -1,0 +1,14 @@
+__pycache__/
+*.egg-info/
+build/
+# large working files; the app only needs guardian/data/whitelist.csv.gz
+categorized_websites_old.csv
+categorized_websites.csv
+database.csv
+
+# project notes and brief (local only)
+CLAUDE.md
+categorization_review_report.md
+Guardian_Project_Brief for MiniProject.docx
+Database/
+~$*.docx

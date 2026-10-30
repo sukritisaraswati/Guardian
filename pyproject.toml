@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guardian"
+version = "0.1.0"
+description = "Proactive URL threat detection proxy"
+requires-python = ">=3.9"
+dependencies = ["mitmproxy>=10", "tldextract>=5"]
+
+[project.scripts]
+guardian = "guardian.cli:main"
+
+[tool.setuptools]
+packages = ["guardian"]
+
+[tool.setuptools.package-data]
+guardian = ["data/*.csv.gz"]
