@@ -73,7 +73,7 @@ def cmd_start(a):
     else:
         kw["start_new_session"] = True
     proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                            env={**os.environ, "GUARDIAN_UNKNOWN_ACTION": a.unknown}, **kw)
+                            **kw)
 
     for _ in range(60):
         if _port_open(a.port):
@@ -94,7 +94,23 @@ def cmd_start(a):
         print(f"System proxy NOT changed: point your browser at {config.HOST}:{a.port}.")
     if not (Path.home() / ".mitmproxy" / "mitmproxy-ca-cert.pem").exists():
         print("HTTPS note: run `guardian install-cert` once so browsers trust Guardian's certificate.")
+    _print_sources()
     print("Run `guardian stop` to stop.")
+    return 0
+
+
+def _print_sources():
+    names = {"virustotal": "VirusTotal", "safebrowsing": "Google Safe Browsing"}
+    missing = [f"{n} (guardian set-key {k} <key>)" for k, n in names.items() if not config.get_key(k)]
+    print("Reputation sources: PhishTank (local feed)" + "".join(
+        f", {n}" for k, n in names.items() if config.get_key(k)))
+    if missing:
+        print("Not configured: " + "; ".join(missing))
+
+
+def cmd_set_key(a):
+    config.set_key(a.service, a.key)
+    print(f"Saved {a.service} key. Restart Guardian (stop, start) to use it.")
     return 0
 
 
@@ -116,6 +132,7 @@ def cmd_status(a):
         print(f"running (pid {st['pid']}, port {st['port']}); log: {config.LOG_FILE}")
     else:
         print("stopped")
+    _print_sources()
     return 0
 
 
@@ -153,12 +170,14 @@ def main():
     s = sub.add_parser("start", help="start protecting")
     s.add_argument("--port", type=int, default=config.PORT)
     s.add_argument("--no-system-proxy", action="store_true", help="don't change OS proxy settings")
-    s.add_argument("--unknown", choices=["allow", "block"], default=config.UNKNOWN_ACTION,
-                   help="what to do with non-whitelisted sites until phase 2 exists")
     s.set_defaults(fn=cmd_start)
     sub.add_parser("stop", help="stop and restore proxy settings").set_defaults(fn=cmd_stop)
     sub.add_parser("status").set_defaults(fn=cmd_status)
     sub.add_parser("install-cert", help="trust Guardian's HTTPS certificate").set_defaults(fn=cmd_install_cert)
+    k = sub.add_parser("set-key", help="save an API key for a reputation service")
+    k.add_argument("service", choices=["virustotal", "safebrowsing", "phishtank"])
+    k.add_argument("key")
+    k.set_defaults(fn=cmd_set_key)
     sub.add_parser("rebuild-db").set_defaults(fn=cmd_rebuild)
     a = p.parse_args()
     sys.exit(a.fn(a))

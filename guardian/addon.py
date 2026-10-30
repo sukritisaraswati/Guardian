@@ -1,10 +1,15 @@
 """mitmproxy addon: every request goes through the Guardian funnel."""
 import asyncio
+import hashlib
+import hmac
 import logging
+import secrets
+import time
+from urllib.parse import quote, urlsplit
 
 from mitmproxy import http
 
-from guardian import config
+from guardian import config, pages, reputation
 from guardian.engine import Engine
 
 config.HOME.mkdir(parents=True, exist_ok=True)
@@ -14,27 +19,60 @@ _log = logging.getLogger("guardian")
 _log.addHandler(_h)
 _log.setLevel(logging.INFO)
 
+PROCEED_HOST = "guardian.invalid"  # never resolves; the addon answers it itself
+
+
+def is_navigation(flow):
+    """True when the user is opening a page (not an image/script/XHR loaded by a page)."""
+    h = flow.request.headers
+    dest = h.get("Sec-Fetch-Dest")
+    if dest:  # browsers send this on HTTPS requests
+        return dest == "document"
+    return flow.request.method == "GET" and "text/html" in h.get("Accept", "")
+
 
 class Guardian:
     def __init__(self):
         self.engine = Engine()
-        self.pending = {}  # host -> future, so one site is categorized once
+        self.secret = secrets.token_hex(16)
+        self.allowed = {}  # host -> expiry, set by "Continue anyway"
+        reputation.start_feed_updates()
+
+    def _token(self, host):
+        return hmac.new(self.secret.encode(), host.encode(), hashlib.sha256).hexdigest()[:32]
+
+    def _proceed(self, flow):
+        target = flow.request.query.get("u", "")
+        host = urlsplit(target).hostname or ""
+        if host and target.startswith(("http://", "https://")) and \
+                hmac.compare_digest(flow.request.query.get("t", ""), self._token(host)):
+            self.allowed[host] = time.time() + config.PROCEED_TTL
+            flow.response = http.Response.make(302, b"", {"Location": target})
+        else:
+            flow.response = http.Response.make(400, b"Invalid Guardian request")
 
     async def request(self, flow: http.HTTPFlow):
-        url = flow.request.pretty_url
-        v = self.engine.check_whitelist(url)
-        if v is None:
-            host = flow.request.pretty_host
-            fut = self.pending.get(host)
-            if fut is None:
-                fut = self.pending[host] = asyncio.ensure_future(
-                    asyncio.get_running_loop().run_in_executor(None, self.engine.check_unknown, url))
-            v = await fut
+        req = flow.request
+        if req.pretty_host == PROCEED_HOST:
+            return self._proceed(flow)
+        url = req.pretty_url
+        if self.engine.check_whitelist(url):
+            return
+        host = req.pretty_host
+        if self.allowed.get(host, 0) > time.time():
+            return
+        nav = is_navigation(flow)
+        v = await asyncio.get_running_loop().run_in_executor(None, self.engine.analyze, url, not nav)
+
+        hdr = {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"}
         if v.action == "block":
-            flow.response = http.Response.make(
-                403,
-                f"<h1>Blocked by Guardian</h1><p>{flow.request.pretty_host}</p><p>{v.reason}</p>".encode(),
-                {"Content-Type": "text/html; charset=utf-8"})
+            if nav:
+                flow.response = http.Response.make(403, pages.malicious(url, v.sources), hdr)
+            else:
+                flow.response = http.Response.make(403, b"Blocked by Guardian")
+        elif v.action == "warn":
+            proceed = f"http://{PROCEED_HOST}/proceed?u={quote(url, safe='')}&t={self._token(host)}"
+            flow.response = http.Response.make(403, pages.suspicious(url, v.unavailable, proceed), hdr)
 
 
 addons = [Guardian()]

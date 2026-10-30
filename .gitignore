@@ -1,3 +1,10 @@
+# secrets: API keys live in ~/.guardian/config.json (outside the repo); never commit key files
+.env
+.env.*
+config.json
+*.key
+.guardian/
+
 __pycache__/
 *.egg-info/
 build/
