@@ -150,13 +150,65 @@ def cmd_install_cert(a):
             time.sleep(0.5)
         p.terminate()
     if sys.platform == "win32":
-        return subprocess.run(["certutil", "-addstore", "-user", "Root", str(ca)]).returncode
+        rc = subprocess.run(["certutil", "-addstore", "-user", "Root", str(ca)]).returncode
+        _firefox_use_os_store()
+        return rc
     if sys.platform == "darwin":
         print(f"Run: sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain {ca}")
+        _firefox_use_os_store()
+        return 0
+    return _linux_install_cert(ca)
+
+
+def _firefox_profiles():
+    roots = [Path.home() / ".mozilla" / "firefox", Path.home() / "snap" / "firefox" / "common" / ".mozilla" / "firefox",
+             Path.home() / ".var" / "app" / "org.mozilla.firefox" / ".mozilla" / "firefox",
+             Path.home() / "Library" / "Application Support" / "Firefox" / "Profiles",
+             Path(os.environ.get("APPDATA", "~")) / "Mozilla" / "Firefox" / "Profiles"]
+    return [d for r in roots if r.is_dir() for d in r.iterdir() if (d / "prefs.js").exists()]
+
+
+def _firefox_use_os_store():
+    """Windows/macOS: make Firefox trust certificates from the OS store (where Guardian's now is)."""
+    line = 'user_pref("security.enterprise_roots.enabled", true);\n'
+    for prof in _firefox_profiles():
+        uj = prof / "user.js"
+        old = uj.read_text(encoding="utf-8") if uj.exists() else ""
+        if "security.enterprise_roots.enabled" not in old:
+            uj.write_text(old + line, encoding="utf-8")
+            print(f"Firefox profile {prof.name}: set to trust the OS certificate store.")
+    print("Restart your browser.")
+
+
+def _linux_install_cert(ca):
+    import shutil
+    ok = True
+    certutil = shutil.which("certutil")
+    if not certutil:
+        print("Missing `certutil`. Install it, then run `guardian install-cert` again:\n"
+              "  sudo apt install libnss3-tools      (Debian/Ubuntu/Kali)\n"
+              "  sudo dnf install nss-tools          (Fedora)")
+        ok = False
     else:
-        print(f"Copy {ca} to /usr/local/share/ca-certificates/guardian.crt and run: sudo update-ca-certificates")
-    print("Firefox keeps its own store: import the same file under Settings > Certificates.")
-    return 0
+        dbs = _firefox_profiles()
+        chrome = Path.home() / ".pki" / "nssdb"
+        if not chrome.exists():
+            chrome.mkdir(parents=True)
+            subprocess.run([certutil, "-N", "-d", f"sql:{chrome}", "--empty-password"], capture_output=True)
+        dbs.append(chrome)
+        for db in dbs:
+            subprocess.run([certutil, "-D", "-n", "Guardian", "-d", f"sql:{db}"], capture_output=True)
+            r = subprocess.run([certutil, "-A", "-n", "Guardian", "-t", "C,,", "-i", str(ca), "-d", f"sql:{db}"],
+                               capture_output=True, text=True)
+            name = "Chromium/Chrome" if db == chrome else f"Firefox profile {db.name}"
+            print(f"{name}: {'trusted' if r.returncode == 0 else 'FAILED ' + r.stderr.strip()}")
+            ok &= r.returncode == 0
+        if not _firefox_profiles():
+            print("No Firefox profile found. Open Firefox once, close it, then run this again.")
+    print("For other programs (curl, Python...), also run:\n"
+          f"  sudo cp {ca} /usr/local/share/ca-certificates/guardian.crt && sudo update-ca-certificates")
+    print("Restart your browser.")
+    return 0 if ok else 1
 
 
 def cmd_rebuild(a):

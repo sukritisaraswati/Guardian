@@ -36,9 +36,15 @@ def malicious(url, sources, risk, unavailable=()):
 
 
 def suspicious(url, unavailable, proceed_url):
-    body = ("<p>This site is not on Guardian's trusted list and was not found in VirusTotal, "
-            "Google Safe Browsing or PhishTank. It may still be dangerous.</p>")
-    if unavailable:
-        body += f"<p><small>Could not check: {escape(', '.join(unavailable))}.</small></p>"
+    checked = [s for s in ("VirusTotal", "Google Safe Browsing", "PhishTank") if s not in unavailable]
+    if not unavailable:
+        body = ("<p>This site is not on Guardian's trusted list and was not found in VirusTotal, "
+                "Google Safe Browsing or PhishTank. It may still be dangerous.</p>")
+    else:
+        found_in = f" and was not found in {escape(' or '.join(checked))}" if checked else ""
+        body = (f"<p>This site is not on Guardian's trusted list{found_in}. It may still be dangerous.</p>"
+                f"<p><b>Not checked: {escape(', '.join(unavailable))}.</b> "
+                "An API key may be missing (<code>guardian status</code> shows which), "
+                "the service was too slow, or its rate limit was reached.</p>")
     buttons = _BACK + f'<a class="btn secondary" href="{escape(proceed_url)}">Continue anyway</a>'
     return _page("Alert: May be malicious", "#e65100", "#fff3e0", url, body, buttons)

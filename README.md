@@ -10,13 +10,25 @@ Proactive URL threat detection. Guardian runs as a local proxy and checks every 
 
 ## Install
 
+Needs Python 3.9+.
+
+**Windows / macOS**
+
 ```
-git clone <repo-url>
+git clone https://github.com/sukritisaraswati/Guardian.git
 cd Guardian
 pip install .
 ```
 
-Needs Python 3.9+.
+**Kali / Debian / Ubuntu** (plain `pip install` is blocked there with `externally-managed-environment`)
+
+```
+sudo apt install pipx libnss3-tools
+pipx ensurepath                 # then open a new terminal
+git clone https://github.com/sukritisaraswati/Guardian.git
+cd Guardian
+pipx install .
+```
 
 ## Use
 
@@ -32,7 +44,13 @@ First time only, so HTTPS sites work through the proxy:
 guardian install-cert
 ```
 
-On Windows this adds Guardian's certificate to your user trust store (Windows asks you to confirm). Firefox uses its own store; import `~/.mitmproxy/mitmproxy-ca-cert.pem` there.
+Then restart the browser. Without this step, sites that are **not** whitelisted show a certificate error (`SEC_ERROR_UNKNOWN_ISSUER`) instead of Guardian's warning page. Whitelisted sites always load normally: Guardian passes their HTTPS traffic through without decrypting it.
+
+- Windows: adds the certificate to your user trust store (Windows asks you to confirm) and tells Firefox to trust that store.
+- Linux: adds it to every Firefox profile and to Chromium/Chrome (needs `certutil` from `libnss3-tools`). Open Firefox at least once before running it.
+- macOS: prints the `security` command to run, and tells Firefox to trust the system store.
+
+On Linux, `guardian start` sets the proxy through GNOME settings only. On other desktops (Kali's default Xfce, KDE), use `guardian start --no-system-proxy` and set the browser's proxy by hand: Firefox > Settings > Network Settings > Manual proxy `127.0.0.1` port `8899`, and tick "Also use this proxy for HTTPS".
 
 Options for `start`: `--port 8899`, `--no-system-proxy` (point the browser at the proxy yourself).
 
@@ -44,7 +62,7 @@ guardian set-key safebrowsing <key>
 guardian set-key phishtank <key>     # optional
 ```
 
-Or set `VIRUSTOTAL_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`, `PHISHTANK_APP_KEY`. Keys are stored in `~/.guardian/config.json`. A source without a key is skipped, and the warning page says so. Each non-whitelisted page URL is sent to Google and VirusTotal for the lookup.
+Or set `VIRUSTOTAL_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`, `PHISHTANK_APP_KEY`. Keys are stored in `~/.guardian/config.json`, outside the repo, so they are never pushed to GitHub. That also means **every machine needs its own `guardian set-key`** after cloning; `guardian status` lists any missing key. A source without a key is skipped, and the warning page says so. Each non-whitelisted page URL is sent to Google and VirusTotal for the lookup.
 
 If Guardian crashes, run `guardian stop` (or `guardian start` again) to restore your proxy settings.
 

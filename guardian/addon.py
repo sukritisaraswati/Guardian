@@ -7,7 +7,7 @@ import secrets
 import time
 from urllib.parse import quote, urlsplit
 
-from mitmproxy import http
+from mitmproxy import http, tls
 
 from guardian import config, pages, reputation
 from guardian.engine import Engine
@@ -50,6 +50,16 @@ class Guardian:
             flow.response = http.Response.make(302, b"", {"Location": target})
         else:
             flow.response = http.Response.make(400, b"Invalid Guardian request")
+
+    def tls_clienthello(self, data: tls.ClientHelloData):
+        """Whitelisted HTTPS sites are tunnelled untouched: no decryption, no Guardian certificate,
+        so they load exactly as they would without Guardian. Only other sites are opened up,
+        which is what lets Guardian show its warning page inside them."""
+        host = data.client_hello.sni or (data.context.server.address or ("",))[0]
+        if not host:
+            return
+        if self.engine.check_whitelist(f"https://{host}/") or self.allowed.get(host, 0) > time.time():
+            data.ignore_connection = True
 
     async def request(self, flow: http.HTTPFlow):
         req = flow.request
