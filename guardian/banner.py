@@ -11,6 +11,7 @@ ART = r"""
  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
 """.strip("\n")
 TAGLINE = "Proactive URL threat detection"
+INDENT = "    "  # left margin for the banner
 
 BLUE = (59, 130, 246)        # letters
 SHADOW = (30, 64, 175)       # box-drawing shadow
@@ -39,7 +40,7 @@ def _fg(rgb, truecolor):
 
 def render(color=True):
     if not color:
-        return f"{ART}\n  {TAGLINE}\n"
+        return "\n".join(INDENT + l for l in ART.splitlines()) + f"\n{INDENT}  {TAGLINE}\n"
     tc = bool(os.environ.get("COLORTERM") in ("truecolor", "24bit") or os.environ.get("WT_SESSION")
               or sys.platform == "win32")
     blue, shadow = _fg(BLUE, tc), _fg(SHADOW, tc)
@@ -52,8 +53,8 @@ def render(color=True):
                 out.append(want)
                 cur = want
             out.append(ch)
-        lines.append("".join(out) + RESET)
-    return "\n".join(lines) + f"\n  {shadow}{TAGLINE}{RESET}\n"
+        lines.append(INDENT + "".join(out) + RESET)
+    return "\n".join(lines) + f"\n{INDENT}  {shadow}{TAGLINE}{RESET}\n"
 
 
 def show():
@@ -65,4 +66,4 @@ def show():
     try:
         print("\n" + text)  # blank line between the typed command and the banner
     except UnicodeEncodeError:  # console that can't print block characters
-        print(f"\nGUARDIAN - {TAGLINE}\n")
+        print(f"\n{INDENT}GUARDIAN - {TAGLINE}\n")
