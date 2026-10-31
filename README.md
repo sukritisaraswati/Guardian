@@ -4,7 +4,7 @@ Proactive URL threat detection. Guardian runs as a local proxy and checks every 
 
 **Phase 1:** Layer 1 whitelist. A site in the whitelist database loads normally.
 
-**Phase 2:** anything else is checked against PhishTank, Google Safe Browsing and VirusTotal. Found in any of them: a *Link is malicious* page replaces the site (no way through). Found in none: an *Alert: May be malicious* page with *Go back* / *Continue anyway*. The Layer 3 sandbox is not built yet.
+**Phase 2:** anything else is checked against PhishTank, Google Safe Browsing and VirusTotal. Found in any of them: a *Link is malicious* page replaces the site (no way through), showing the chance of being malicious: 33% if 1 of the 3 sources flags it, 66% for 2, 100% for all 3. Found in none: an *Alert: May be malicious* page with *Go back* / *Continue anyway*. The Layer 3 sandbox is not built yet.
 
 ## Install
 

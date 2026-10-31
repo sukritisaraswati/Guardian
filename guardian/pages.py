@@ -13,6 +13,7 @@ a.btn,button{display:inline-block;margin:16px 8px 0 0;padding:10px 18px;border-r
 font-size:15px;cursor:pointer;text-decoration:none}
 .primary{background:%(accent)s;color:#fff}.secondary{background:#e8e8e8;color:#333}
 small{color:#666}
+.risk{font-size:20px;margin:16px 0}.risk b{font-size:34px;color:%(accent)s}
 """
 
 
@@ -26,8 +27,11 @@ def _page(title, accent, bg, url, body, buttons):
 _BACK = '<button class=primary onclick="history.length>1?history.back():window.close()">Go back</button>'
 
 
-def malicious(url, sources):
-    body = f"<p>This link is known to be dangerous. Flagged by: <b>{escape(', '.join(sources))}</b>.</p>"
+def malicious(url, sources, risk, unavailable=()):
+    body = (f"<p class=risk><b>{risk}%</b> chance of being malicious</p>"
+            f"<p>Flagged by {len(sources)} of 3 sources: <b>{escape(', '.join(sources))}</b>.</p>")
+    if unavailable:
+        body += f"<p><small>Could not check: {escape(', '.join(unavailable))}.</small></p>"
     return _page("Link is malicious", "#c62828", "#ffebee", url, body, _BACK)
 
 

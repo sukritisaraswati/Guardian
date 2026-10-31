@@ -25,6 +25,9 @@ PT = "PhishTank"
 csv.field_size_limit(10_000_000)
 
 
+RISK = {0: 0, 1: 33, 2: 66, 3: 100}
+
+
 class Unavailable(Exception):
     """A source could not answer (no key, rate limit, timeout, network error)."""
 
@@ -35,6 +38,11 @@ class Result:
     sources: list = field(default_factory=list)      # sources that flagged the URL
     checked: list = field(default_factory=list)      # sources that answered
     unavailable: list = field(default_factory=list)  # sources that could not answer
+
+    @property
+    def risk(self):
+        """Percent chance of being malicious: flagged by 1 of 3 sources = 33, 2 = 66, 3 = 100."""
+        return RISK[min(len(self.sources), 3)]
 
 
 # ---- PhishTank: local copy of the public feed ---------------------------------------------
@@ -174,18 +182,20 @@ def _store(url, r):
     ttl = FOUND_TTL if r.found else (PARTIAL_TTL if r.unavailable else CLEAN_TTL)
     _cache[url] = (time.time() + ttl, r)
     if r.found:
-        _bad_hosts[(urlsplit(url).hostname or "").lower()] = time.time() + FOUND_TTL
+        _bad_hosts[(urlsplit(url).hostname or "").lower()] = (time.time() + FOUND_TTL, list(r.sources))
 
 
 def check(url, quick=False):
-    """-> Result. quick=True never touches the network (cache + PhishTank only), for sub-resources."""
+    """-> Result. Asks every source (within the time limit) so the risk score counts all of them.
+    quick=True never touches the network (cache + PhishTank only), for sub-resources."""
     now = time.time()
     hit = _cache.get(url)
     if hit and hit[0] > now:
         return hit[1]
     host = (urlsplit(url).hostname or "").lower()
-    if _bad_hosts.get(host, 0) > now:
-        return Result(True, ["earlier lookup"])
+    bad = _bad_hosts.get(host)
+    if bad and bad[0] > now:
+        return Result(True, list(bad[1]))
 
     r = Result()
     if phishtank.loaded:
@@ -193,33 +203,26 @@ def check(url, quick=False):
         if phishtank.contains(url):
             r.found = True
             r.sources.append(PT)
-            _store(url, r)
-            return r
     else:
         r.unavailable.append(PT)
     if quick:
-        return r
+        return r  # not cached: the page itself still gets the full check
 
     futs = {_pool.submit(_gsb, url): GSB, _pool.submit(_vt, url): VT}
-    pending = set(futs)
-    deadline = now + config.PHASE2_TIMEOUT
-    while pending and not r.found:
-        left = deadline - time.time()
-        if left <= 0:
-            break
-        done, pending = wait(pending, timeout=left, return_when=FIRST_COMPLETED)
-        for f in done:
-            try:
-                flagged = f.result()
-            except Exception:
-                r.unavailable.append(futs[f])
-                continue
-            r.checked.append(futs[f])
-            if flagged:
-                r.found = True
-                r.sources.append(futs[f])
-    if not r.found:
-        r.unavailable += [futs[f] for f in pending]
+    done, pending = wait(futs, timeout=max(0, now + config.PHASE2_TIMEOUT - time.time()))
+    for f in futs:
+        if f not in done:
+            continue
+        try:
+            flagged = f.result()
+        except Exception:
+            r.unavailable.append(futs[f])
+            continue
+        r.checked.append(futs[f])
+        if flagged:
+            r.found = True
+            r.sources.append(futs[f])
+    r.unavailable += [futs[f] for f in pending]
     for f in pending:
         f.cancel()
     _store(url, r)

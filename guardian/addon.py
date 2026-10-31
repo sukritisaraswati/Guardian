@@ -67,7 +67,7 @@ class Guardian:
         hdr = {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"}
         if v.action == "block":
             if nav:
-                flow.response = http.Response.make(403, pages.malicious(url, v.sources), hdr)
+                flow.response = http.Response.make(403, pages.malicious(url, v.sources, v.risk, v.unavailable), hdr)
             else:
                 flow.response = http.Response.make(403, b"Blocked by Guardian")
         elif v.action == "warn":
