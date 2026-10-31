@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/banner.svg" alt="GUARDIAN" width="760"></p>
+
 # Guardian
 
 Proactive URL threat detection. Guardian runs as a local proxy and checks every URL you visit.

@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import __version__, config, sysproxy, whitelist
+from . import __version__, banner, config, sysproxy, whitelist
 
 MITMDUMP = "from mitmproxy.tools.main import mitmdump; mitmdump()"
 
@@ -48,6 +48,7 @@ def _port_open(port):
 
 
 def cmd_start(a):
+    banner.show()
     st = _load_state()
     if st:
         if _alive(st["pid"]):
@@ -127,6 +128,7 @@ def cmd_stop(a):
 
 
 def cmd_status(a):
+    banner.show()
     st = _load_state()
     if st and _alive(st["pid"]):
         print(f"running (pid {st['pid']}, port {st['port']}); log: {config.LOG_FILE}")
@@ -166,7 +168,7 @@ def cmd_rebuild(a):
 def main():
     p = argparse.ArgumentParser(prog="guardian", description="Guardian URL threat detection")
     p.add_argument("--version", action="version", version=__version__)
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd")
     s = sub.add_parser("start", help="start protecting")
     s.add_argument("--port", type=int, default=config.PORT)
     s.add_argument("--no-system-proxy", action="store_true", help="don't change OS proxy settings")
@@ -180,4 +182,8 @@ def main():
     k.set_defaults(fn=cmd_set_key)
     sub.add_parser("rebuild-db").set_defaults(fn=cmd_rebuild)
     a = p.parse_args()
+    if not a.cmd:  # plain `guardian`
+        banner.show()
+        p.print_help()
+        sys.exit(0)
     sys.exit(a.fn(a))
