@@ -63,6 +63,6 @@ def show():
     except Exception:
         pass
     try:
-        print(text)
+        print("\n" + text)  # blank line between the typed command and the banner
     except UnicodeEncodeError:  # console that can't print block characters
-        print(f"GUARDIAN - {TAGLINE}\n")
+        print(f"\nGUARDIAN - {TAGLINE}\n")
