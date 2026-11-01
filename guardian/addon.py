@@ -75,13 +75,14 @@ class Guardian:
         v = await asyncio.get_running_loop().run_in_executor(None, self.engine.analyze, url, not nav)
 
         hdr = {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"}
+        proceed = f"http://{PROCEED_HOST}/proceed?u={quote(url, safe='')}&t={self._token(host)}"
         if v.action == "block":
             if nav:
-                flow.response = http.Response.make(403, pages.malicious(url, v.sources, v.risk, v.unavailable), hdr)
+                flow.response = http.Response.make(
+                    403, pages.malicious(url, v.sources, v.risk, proceed, v.unavailable), hdr)
             else:
                 flow.response = http.Response.make(403, b"Blocked by Guardian")
         elif v.action == "warn":
-            proceed = f"http://{PROCEED_HOST}/proceed?u={quote(url, safe='')}&t={self._token(host)}"
             flow.response = http.Response.make(403, pages.suspicious(url, v.unavailable, proceed), hdr)
 
 

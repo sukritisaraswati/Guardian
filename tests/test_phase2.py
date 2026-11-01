@@ -89,8 +89,9 @@ def test_risk_survives_bad_host_cache(monkeypatch):
 
 def test_page_shows_percentage():
     from guardian import pages
-    html = pages.malicious("http://x.example/", ["PhishTank", "VirusTotal"], 66).decode()
+    html = pages.malicious("http://x.example/", ["PhishTank", "VirusTotal"], 66, "http://guardian.invalid/p").decode()
     assert "66%" in html and "2 of 3" in html
+    assert "Continue anyway" in html and "http://guardian.invalid/p" in html
 
 
 def test_missing_keys_reported_and_cached(monkeypatch):

@@ -29,13 +29,15 @@ def _page(title, url, body, buttons):
 
 _BACK = '<button class=primary onclick="history.length>1?history.back():window.close()">Go back</button>'
 
+_CONTINUE = '<a class="btn secondary" href="{}">Continue anyway</a>'
 
-def malicious(url, sources, risk, unavailable=()):
+
+def malicious(url, sources, risk, proceed_url, unavailable=()):
     body = (f"<p class=risk><b>{risk}%</b> chance of being malicious</p>"
             f"<p>Flagged by {len(sources)} of 3 sources: <b>{escape(', '.join(sources))}</b>.</p>")
     if unavailable:
         body += f"<p><small>Could not check: {escape(', '.join(unavailable))}.</small></p>"
-    return _page("Link is malicious", url, body, _BACK)
+    return _page("Link is malicious", url, body, _BACK + _CONTINUE.format(escape(proceed_url)))
 
 
 def suspicious(url, unavailable, proceed_url):
@@ -49,5 +51,5 @@ def suspicious(url, unavailable, proceed_url):
                 f"<p><b>Not checked: {escape(', '.join(unavailable))}.</b> "
                 "An API key may be missing (<code>guardian status</code> shows which), "
                 "the service was too slow, or its rate limit was reached.</p>")
-    buttons = _BACK + f'<a class="btn secondary" href="{escape(proceed_url)}">Continue anyway</a>'
+    buttons = _BACK + _CONTINUE.format(escape(proceed_url))
     return _page("Alert: May be malicious", url, body, buttons)
