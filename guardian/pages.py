@@ -1,10 +1,13 @@
 """Warning pages shown in the browser in place of the requested page."""
 from html import escape
 
+# One look for every Guardian page: same colour, same card size.
+ACCENT, BG = "#e65100", "#fff3e0"
+
 _CSS = """
 body{font-family:system-ui,sans-serif;margin:0;min-height:100vh;display:flex;align-items:center;
 justify-content:center;background:%(bg)s;color:#1a1a1a}
-.card{max-width:560px;margin:16px;padding:32px;background:#fff;border-radius:12px;
+.card{box-sizing:border-box;width:624px;max-width:calc(100%% - 32px);margin:16px;padding:32px;background:#fff;border-radius:12px;
 box-shadow:0 4px 24px rgba(0,0,0,.2);border-top:8px solid %(accent)s}
 h1{margin:0 0 12px;color:%(accent)s;font-size:26px}
 p{line-height:1.5;margin:8px 0}.url{word-break:break-all;font-family:monospace;background:#f3f3f3;
@@ -17,9 +20,9 @@ small{color:#666}
 """
 
 
-def _page(title, accent, bg, url, body, buttons):
+def _page(title, url, body, buttons):
     return (f"<!doctype html><meta charset=utf-8><title>{escape(title)}</title>"
-            f"<style>{_CSS % {'accent': accent, 'bg': bg}}</style>"
+            f"<style>{_CSS % {'accent': ACCENT, 'bg': BG}}</style>"
             f"<div class=card><h1>{escape(title)}</h1><p class=url>{escape(url)}</p>{body}{buttons}"
             f"<p><small>Guardian</small></p></div>").encode()
 
@@ -32,7 +35,7 @@ def malicious(url, sources, risk, unavailable=()):
             f"<p>Flagged by {len(sources)} of 3 sources: <b>{escape(', '.join(sources))}</b>.</p>")
     if unavailable:
         body += f"<p><small>Could not check: {escape(', '.join(unavailable))}.</small></p>"
-    return _page("Link is malicious", "#c62828", "#ffebee", url, body, _BACK)
+    return _page("Link is malicious", url, body, _BACK)
 
 
 def suspicious(url, unavailable, proceed_url):
@@ -47,4 +50,4 @@ def suspicious(url, unavailable, proceed_url):
                 "An API key may be missing (<code>guardian status</code> shows which), "
                 "the service was too slow, or its rate limit was reached.</p>")
     buttons = _BACK + f'<a class="btn secondary" href="{escape(proceed_url)}">Continue anyway</a>'
-    return _page("Alert: May be malicious", "#e65100", "#fff3e0", url, body, buttons)
+    return _page("Alert: May be malicious", url, body, buttons)
