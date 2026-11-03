@@ -1,5 +1,5 @@
 body.popup { width: 340px; padding: 14px; background: #fff; font-size: 14px; }
-.banner { width: 100%; display: block; border-radius: 8px; margin-bottom: 14px; }
+.banner { width: 100%; display: block; margin-bottom: 14px; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .state { font-size: 18px; font-weight: 600; }
 .state.off { color: #6b7280; }
