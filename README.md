@@ -10,7 +10,7 @@ Proactive URL threat detection. Guardian runs as a local proxy and checks every 
 
 ## Two ways to use Guardian
 
-- **Browser extension**: install it in Chrome or Edge and click to switch it on or off. See [Chrome extension](#chrome-extension-no-clone-needed).
+- **Browser extension**: load it in Chrome, Edge, Brave or another Chromium browser and click to switch it on or off. See [Chrome extension](#chrome-extension).
 - **Command line (proxy)**: `guardian start` / `guardian stop` protects every program on the computer. Install below.
 
 ## Install
@@ -82,13 +82,31 @@ If Guardian crashes, run `guardian stop` (or `guardian start` again) to restore 
 
 VirusTotal counts as "found" when at least 2 engines flag the URL (`GUARDIAN_VT_MIN=1` for any single engine). Decisions are logged to `~/.guardian/guardian.log`.
 
-## Chrome extension (no clone needed)
+## Chrome extension
 
-Guardian also ships as a browser extension for Chrome, Edge, Brave and other Chromium browsers. Nothing to clone or install with pip, and no certificate or proxy settings.
+Guardian also runs as a browser extension for Chrome, Edge, Brave and other Chromium browsers. No pip, no certificate and no proxy settings. It is not on any web store, so you load it yourself in developer mode. (Firefox and Safari are not supported.)
 
-1. Install it: from the Chrome Web Store (when published), or download `guardian-extension-<version>.zip` from the GitHub Releases page, unzip it, open `chrome://extensions`, turn on *Developer mode*, click *Load unpacked* and pick the unzipped folder.
-2. Open the extension's settings (it opens on install) and paste your Google Safe Browsing and VirusTotal keys. Without keys only PhishTank is used.
-3. Click the Guardian icon in the toolbar to switch protection **ON / OFF** whenever you like. The badge shows `OFF` while it is stopped.
+**Get the extension folder** one of two ways:
+
+- *Clone the repo* and use the `extension/` folder directly:
+
+  ```
+  git clone https://github.com/sukritisaraswati/Guardian.git
+  ```
+
+  The folder to load is `Guardian/extension`.
+
+- *Or download the zip* `guardian-extension-<version>.zip` from the repo's [Releases](https://github.com/sukritisaraswati/Guardian/releases) page and unzip it into a folder you will keep (the browser runs the extension from that folder, so don't move or delete it afterwards). Build the zip yourself with `python tools/pack_extension.py`.
+
+**Load it in the browser:**
+
+1. Open `chrome://extensions` (in Edge, `edge://extensions`).
+2. Turn on **Developer mode** (top-right in Chrome, left in Edge).
+3. Click **Load unpacked** and pick the folder that has `manifest.json` directly inside it (`extension/`, or the unzipped folder).
+4. The extension's settings page opens. Paste your Google Safe Browsing and VirusTotal keys. Without keys only PhishTank is used, and keys are stored in that browser only, so every browser needs its own.
+5. Click the Guardian icon in the toolbar to switch protection **ON / OFF** whenever you like. The badge shows `OFF` while it is stopped.
+
+To update after a code change, pull or rebuild the folder, then click the reload icon on Guardian's card in `chrome://extensions`.
 
 It behaves like the command-line version: a whitelisted site opens normally; any other site is sent to Guardian's page first, which checks PhishTank, Google Safe Browsing and VirusTotal and shows *Link is malicious* (33% / 66% / 100%) or *Alert: May be malicious*, each with *Go back* / *Continue anyway* (one hour per site).
 
