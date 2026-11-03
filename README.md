@@ -108,6 +108,28 @@ Guardian also runs as a browser extension for Chrome, Edge, Brave and other Chro
 
 To update after a code change, pull or rebuild the folder, then click the reload icon on Guardian's card in `chrome://extensions`.
 
+### Kali / Debian / Ubuntu
+
+Kali's default browser is Firefox, which the extension does not support, so use Chromium (Google Chrome or Brave also work).
+
+1. Install Chromium and get the code:
+
+   ```
+   sudo apt update
+   sudo apt install chromium
+   cd ~
+   git clone https://github.com/sukritisaraswati/Guardian.git     # or: cd ~/Guardian && git pull
+   ```
+
+2. Start Chromium as your normal user (Chromium refuses to start as root without `--no-sandbox`): run `chromium`.
+3. Open `chrome://extensions` and turn on **Developer mode** (top-right).
+4. Click **Load unpacked**. In the file dialog press `Ctrl+L`, type `~/Guardian/extension` (or the full path, e.g. `/home/<you>/Guardian/extension`) and confirm. The folder must contain `manifest.json` directly.
+5. Paste your Google Safe Browsing and VirusTotal keys in the settings page that opens (keys are per browser, so set them here even if the `guardian` command already has them).
+6. Pin the Guardian icon from the puzzle-piece menu and use it to switch protection **ON / OFF**.
+7. Check it: open `br-icloud.com.br`. With a VirusTotal key set you should see *Link is malicious* at 33%.
+
+Don't run `guardian start` (the proxy) and the extension in the same browser at once; the extension needs no proxy or certificate. After a `git pull`, click the reload icon on Guardian's card in `chrome://extensions`. Firefox users on Kali keep using the proxy (`guardian start --no-system-proxy` plus the manual proxy setting above).
+
 It behaves like the command-line version: a whitelisted site opens normally; any other site is sent to Guardian's page first, which checks PhishTank, Google Safe Browsing and VirusTotal and shows *Link is malicious* (33% / 66% / 100%) or *Alert: May be malicious*, each with *Go back* / *Continue anyway* (one hour per site).
 
 Differences from the proxy version: it only guards pages you open in that browser (top-level navigations, not images or scripts), a non-whitelisted page is held on Guardian's page until the check finishes, and keys are kept in the browser's extension storage.
