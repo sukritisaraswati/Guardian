@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Guardian</title>
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="popup">
+  <img class="banner" src="icons/banner.svg" alt="GUARDIAN">
+
+  <div class="switch-row">
+    <div>
+      <div class="state" id="state">Protection ON</div>
+      <div class="muted" id="hint">Checking every page you open.</div>
+    </div>
+    <label class="switch" title="Start / stop Guardian">
+      <input type="checkbox" id="toggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <ul class="rows">
+    <li><span>Blocked as malicious</span><b id="blocked">0</b></li>
+    <li><span>Alerts shown</span><b id="warned">0</b></li>
+  </ul>
+
+  <div id="keywarn" class="keywarn" hidden>
+    Google Safe Browsing / VirusTotal keys are missing, so only PhishTank can check sites.
+  </div>
+
+  <a href="#" id="settings" class="settings">Settings &amp; API keys</a>
+  <script src="popup.js"></script>
+</body>
+</html>

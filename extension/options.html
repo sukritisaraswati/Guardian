@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Guardian settings</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    label { display: block; margin-top: 16px; font-weight: 600; }
+    input[type=password], input[type=text] { width: 100%; margin-top: 6px; padding: 10px; font: 14px monospace;
+      border: 1px solid #ccc; border-radius: 6px; }
+    .status { margin-left: 8px; font-weight: 400; font-size: 13px; }
+    .ok { color: #2e7d32; } .no { color: #b71c1c; }
+    #saved { margin-left: 12px; color: #2e7d32; }
+  </style>
+</head>
+<body class="page">
+  <div class="card">
+    <h1>Guardian settings</h1>
+    <p>Guardian checks sites that are not on its trusted list against PhishTank (free, built in),
+       Google Safe Browsing and VirusTotal. The last two need your own free API keys.</p>
+
+    <label for="safebrowsing">Google Safe Browsing API key <span class="status" id="s-safebrowsing"></span></label>
+    <input type="password" id="safebrowsing" autocomplete="off" spellcheck="false">
+    <p class="muted"><small>Google Cloud Console &rarr; enable the <i>Safe Browsing API</i> &rarr; Credentials &rarr; API key.</small></p>
+
+    <label for="virustotal">VirusTotal API key <span class="status" id="s-virustotal"></span></label>
+    <input type="password" id="virustotal" autocomplete="off" spellcheck="false">
+    <p class="muted"><small>virustotal.com &rarr; your profile &rarr; API key. The free key allows 4 lookups a minute.</small></p>
+
+    <button class="btn primary" id="save">Save keys</button><span id="saved"></span>
+
+    <p class="muted"><small>Keys are stored only in this browser (extension storage) and are sent only to
+      Google and VirusTotal. Every site that is not on the trusted list is sent to them for the lookup.
+      Without a key that service is skipped, and the warning page says so.</small></p>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

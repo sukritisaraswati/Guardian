@@ -8,6 +8,11 @@ Proactive URL threat detection. Guardian runs as a local proxy and checks every 
 
 **Phase 2:** anything else is checked against PhishTank, Google Safe Browsing and VirusTotal. Found in any of them: a *Link is malicious* page replaces the site (with *Go back* / *Continue anyway*), showing the chance of being malicious: 33% if 1 of the 3 sources flags it, 66% for 2, 100% for all 3. Found in none: an *Alert: May be malicious* page with *Go back* / *Continue anyway*. The Layer 3 sandbox is not built yet.
 
+## Two ways to use Guardian
+
+- **Browser extension**: install it in Chrome or Edge and click to switch it on or off. See [Chrome extension](#chrome-extension-no-clone-needed).
+- **Command line (proxy)**: `guardian start` / `guardian stop` protects every program on the computer. Install below.
+
 ## Install
 
 Needs Python 3.9+.
@@ -76,6 +81,20 @@ If Guardian crashes, run `guardian stop` (or `guardian start` again) to restore 
 6. The site is also categorized in the background (never delays the page).
 
 VirusTotal counts as "found" when at least 2 engines flag the URL (`GUARDIAN_VT_MIN=1` for any single engine). Decisions are logged to `~/.guardian/guardian.log`.
+
+## Chrome extension (no clone needed)
+
+Guardian also ships as a browser extension for Chrome, Edge, Brave and other Chromium browsers. Nothing to clone or install with pip, and no certificate or proxy settings.
+
+1. Install it: from the Chrome Web Store (when published), or download `guardian-extension-<version>.zip` from the GitHub Releases page, unzip it, open `chrome://extensions`, turn on *Developer mode*, click *Load unpacked* and pick the unzipped folder.
+2. Open the extension's settings (it opens on install) and paste your Google Safe Browsing and VirusTotal keys. Without keys only PhishTank is used.
+3. Click the Guardian icon in the toolbar to switch protection **ON / OFF** whenever you like. The badge shows `OFF` while it is stopped.
+
+It behaves like the command-line version: a whitelisted site opens normally; any other site is sent to Guardian's page first, which checks PhishTank, Google Safe Browsing and VirusTotal and shows *Link is malicious* (33% / 66% / 100%) or *Alert: May be malicious*, each with *Go back* / *Continue anyway* (one hour per site).
+
+Differences from the proxy version: it only guards pages you open in that browser (top-level navigations, not images or scripts), a non-whitelisted page is held on Guardian's page until the check finishes, and keys are kept in the browser's extension storage.
+
+The extension lives in [extension/](extension/). Rebuild its data with `python tools/build_extension_data.py`, test it with `node --test tests/extension.test.mjs`, and zip it with `python tools/pack_extension.py`.
 
 ## Whitelist data
 

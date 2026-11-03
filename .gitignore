@@ -19,3 +19,6 @@ categorization_review_report.md
 Guardian_Project_Brief for MiniProject.docx
 Database/
 ~$*.docx
+
+# built extension zip (upload it to a GitHub Release or the Chrome Web Store instead)
+dist/
